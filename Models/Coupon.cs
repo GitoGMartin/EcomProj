@@ -1,0 +1,1 @@
+namespace ECommerce.API.Models; public class Coupon { public Guid Id{get;set;} }

@@ -1,0 +1,1 @@
+namespace ECommerce.API.Models; public class OrderItem { public Guid Id{get;set;} }

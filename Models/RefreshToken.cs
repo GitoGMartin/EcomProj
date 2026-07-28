@@ -1,0 +1,1 @@
+namespace ECommerce.API.Models; public class RefreshToken{public Guid RefreshTokenId{get;set;}}

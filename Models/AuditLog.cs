@@ -1,0 +1,1 @@
+namespace ECommerce.API.Models; public class AuditLog { public Guid Id{get;set;} }
