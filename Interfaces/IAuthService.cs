@@ -2,15 +2,16 @@
 
 namespace EcomProj.Interfaces
 {
-    public class IAuthService
+    public interface IAuthService
     {
-        Task<bool> Register(RegisterDto dto);
+        Task<Guid> RegisterAsync(CreateUserDTO user);
 
-        Task<bool> Login(LoginDto dto);
+        //Task<bool> Login(LoginDto dto);
 
-        internal async Task<bool> Login(LoginDTO dto)
+        /*internal async Task<bool> Login(LoginDTO dto)
         {
             throw new NotImplementedException();
-        }
+        }*/
+
     }
 }

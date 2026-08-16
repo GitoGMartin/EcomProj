@@ -14,17 +14,18 @@ namespace EcomProj.Controllers
         {
             _authService = authService;
         }
-        [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDTO dto)
-        {
-            bool success = await _authService.Login(dto);
 
-            if (!success)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(CreateUserDTO dto)
+        {
+            Guid userId = await _authService.RegisterAsync(dto);
+
+            if (userId == Guid.Empty)
             {
-                return Unauthorized("Invalid email or password.");
+                return Conflict("A user with that email already exists.");
             }
 
-            return Ok("Login successful.");
+            return Ok(userId);
         }
     }
 }

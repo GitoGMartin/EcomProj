@@ -7,7 +7,7 @@ public class User
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string passwordHash { get; set; }
-    private string phoneNumber { get; set; }
+    public string phoneNumber { get; set; }
     public Boolean isActive { get; set; }
     public DateTime createDate { get; set; }
     public DateTime updateDate { get; set; }

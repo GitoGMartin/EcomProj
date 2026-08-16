@@ -1,8 +1,9 @@
 using ECommerce.API.Interfaces;
 using ECommerce.API.Models;
 using ECommerce.API.Repositories;
+using ECommerce.API.Services;
 using EcomProj.Interfaces;
-using EcomProj.Services;
+
 using Microsoft.AspNetCore.Identity;
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);

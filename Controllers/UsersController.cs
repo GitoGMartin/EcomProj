@@ -31,14 +31,14 @@ namespace EcomProj.Controllers
             return Ok(user);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateUserDTO user)
-        {
-            if (user is null) return BadRequest();
-            var newId = await _userRepository.CreateAsync(user);
-            if (newId == Guid.Empty) return StatusCode(500, "Could not create user");
-            return CreatedAtAction(nameof(Get), new { id = newId }, null);
-        }
+        //[HttpPost]
+        //public async Task<IActionResult> Create([FromBody] User user)
+        //{
+        //    if (user is null) return BadRequest();
+        //    var newId = await _userRepository.CreateAsync(user);
+        //    if (newId == Guid.Empty) return StatusCode(500, "Could not create user");
+        //    return CreatedAtAction(nameof(Get), new { id = newId }, null);
+        //}
 
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UserDTO user)

@@ -56,37 +56,69 @@ public class UserRepository : IUserRepository
 
     public async Task<UserDTO?> GetByIdAsync(Guid id)
     {
-        const string sql = @"SELECT UserId, FirstName, LastName, Email, PhoneNumber, IsActive, CreateDat, UpdateDat FROM users WHERE UserId = @Id";
+        const string sql = @"
+        SELECT userid,
+               firstname,
+               lastname,
+               email,
+               phonenumber,
+               isactive,
+               createdat,
+               updatedat
+        FROM users
+        WHERE userid = @Id";
 
         using var conn = CreateConnection();
         await conn.OpenAsync();
+
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
+
         var p = cmd.CreateParameter();
         p.ParameterName = "@Id";
         p.Value = id;
+
         cmd.Parameters.Add(p);
 
         using var rdr = await cmd.ExecuteReaderAsync();
+
         if (await rdr.ReadAsync())
         {
             return new UserDTO
             {
-                id = rdr["UserId"] is Guid uid ? uid : Guid.Empty,
-                firstName = rdr["FirstName"] as string ?? string.Empty,
-                LastName = rdr["LastName"] as string ?? string.Empty,
-                Email = rdr["Email"] as string ?? string.Empty,
-                PhoneNumber = rdr["PhoneNumber"] as string ?? string.Empty,
-                IsActive = rdr["IsActive"] is bool b && b,
-                CreateDate = rdr["Createdat"] is DateTime cd ? cd : DateTime.MinValue,
-                UpdateDate = rdr["UpdateDat"] is DateTime ud ? ud : DateTime.MinValue
+                id = rdr["userid"] is Guid uid
+                    ? uid
+                    : Guid.Empty,
+
+                firstName = rdr["firstname"] as string
+                    ?? string.Empty,
+
+                LastName = rdr["lastname"] as string
+                    ?? string.Empty,
+
+                Email = rdr["email"] as string
+                    ?? string.Empty,
+
+                PhoneNumber = rdr["phonenumber"] as string
+                    ?? string.Empty,
+
+                IsActive = rdr["isactive"] is bool b && b,
+
+                CreateDate = rdr["createdat"] is DateTime cd
+                    ? cd
+                    : DateTime.MinValue,
+
+                UpdateDate = rdr["updatedat"] is DateTime ud
+                    ? ud
+                    : DateTime.MinValue
             };
         }
 
         return null;
     }
 
-    public async Task<Guid> CreateAsync(CreateUserDTO user)
+
+    public async Task<Guid> CreateAsync(User user)
     {
         var newId = Guid.NewGuid();
         const string sql = @"INSERT INTO ""users"" (userid, FirstName, LastName, Email, passwordHash, PhoneNumber, IsActive, Createdat, UpdateDat)
@@ -106,11 +138,11 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
         }
 
         AddParam("@UserId", newId);
-        AddParam("@FirstName", user.firstName);
+        AddParam("@FirstName", user.FirstName);
         AddParam("@LastName", user.LastName);
         AddParam("@Email", user.Email);
-        AddParam("@Password", user.Password);
-        AddParam("@PhoneNumber", user.PhoneNumber);
+        AddParam("@Password", user.passwordHash);
+        AddParam("@PhoneNumber", user.phoneNumber);
         AddParam("@IsActive", true);
         AddParam("@CreateDat", DateTime.Now);
         AddParam("@UpdateDat", DateTime.Now);
@@ -171,14 +203,14 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
         await connection.OpenAsync();
 
         string sql = """
-        SELECT
-            "UserId",
-            "Email",
-            "PasswordHash",
-            "CreatedAt"
-        FROM "Users"
-        WHERE "Email" = @Email
-        """;
+    SELECT
+        UserId,
+        Email,
+        PasswordHash,
+        CreatedAt
+    FROM "users"
+    WHERE Email = @Email
+    """;
 
         using var command = new NpgsqlCommand(sql, connection);
 
@@ -193,10 +225,10 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
 
         return new User
         {
-            UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
-            Email = reader.GetString(reader.GetOrdinal("Email")),
-            passwordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-            createDate = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
+            UserId = reader.GetGuid(reader.GetOrdinal("userid")),
+            Email = reader.GetString(reader.GetOrdinal("email")),
+            passwordHash = reader.GetString(reader.GetOrdinal("passwordhash")),
+            createDate = reader.GetDateTime(reader.GetOrdinal("createdat"))
         };
     }
 }
