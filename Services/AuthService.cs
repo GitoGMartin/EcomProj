@@ -10,13 +10,16 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
-        IPasswordHasher<User> passwordHasher)
+        IPasswordHasher<User> passwordHasher,
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     public async Task<Guid> RegisterAsync(CreateUserDTO dto)
@@ -46,5 +49,26 @@ public class AuthService : IAuthService
         );
 
         return await _userRepository.CreateAsync(user);
+    }
+    public async Task<bool> Login(LoginDTO dto)
+    {
+        var email = dto.Email?.Trim() ?? string.Empty;
+        User? user = await _userRepository.GetUserByEmail(email);
+
+        if (user == null)
+        {
+            _logger.LogWarning("Login failed: user not found for email {Email}", email);
+            return false;
+        }
+
+
+        PasswordVerificationResult result = _passwordHasher.VerifyHashedPassword(
+            user,
+            user.passwordHash,
+            dto.Password
+        );
+
+
+        return result == PasswordVerificationResult.Success;
     }
 }

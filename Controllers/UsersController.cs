@@ -31,15 +31,6 @@ namespace EcomProj.Controllers
             return Ok(user);
         }
 
-        //[HttpPost]
-        //public async Task<IActionResult> Create([FromBody] User user)
-        //{
-        //    if (user is null) return BadRequest();
-        //    var newId = await _userRepository.CreateAsync(user);
-        //    if (newId == Guid.Empty) return StatusCode(500, "Could not create user");
-        //    return CreatedAtAction(nameof(Get), new { id = newId }, null);
-        //}
-
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UserDTO user)
         {
@@ -55,6 +46,13 @@ namespace EcomProj.Controllers
             var ok = await _userRepository.DeleteAsync(id);
             if (!ok) return NotFound();
             return NoContent();
+        }
+        [HttpGet("Email/{email}")]
+        public async Task<IActionResult> GetByEmail(string email)
+        {
+            var user = await _userRepository.GetUserByEmail(email);
+            if (user is null) return NotFound();
+            return Ok(user);
         }
     }
 }

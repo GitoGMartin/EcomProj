@@ -6,12 +6,9 @@ namespace EcomProj.Interfaces
     {
         Task<Guid> RegisterAsync(CreateUserDTO user);
 
-        //Task<bool> Login(LoginDto dto);
+        Task<bool> Login(LoginDTO dto);
 
-        /*internal async Task<bool> Login(LoginDTO dto)
-        {
-            throw new NotImplementedException();
-        }*/
+
 
     }
 }

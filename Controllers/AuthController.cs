@@ -27,5 +27,17 @@ namespace EcomProj.Controllers
 
             return Ok(userId);
         }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDTO dto)
+        {
+            bool isAuthenticated = await _authService.Login(dto);
+
+            if (!isAuthenticated)
+            {
+                return Unauthorized("Invalid email or password.");
+            }
+
+            return Ok("Login successful.");
+        }
     }
 }

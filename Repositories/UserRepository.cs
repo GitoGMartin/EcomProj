@@ -25,8 +25,7 @@ public class UserRepository : IUserRepository
         var results = new List<UserDTO>();
 
         const string sql = @"
-        SELECT UserId, FirstName, LastName, Email,
-               PhoneNumber, IsActive, Createdat, UpdateDat
+        SELECT *
         FROM ""users""";
 
         await using var conn = CreateConnection();
@@ -57,14 +56,7 @@ public class UserRepository : IUserRepository
     public async Task<UserDTO?> GetByIdAsync(Guid id)
     {
         const string sql = @"
-        SELECT userid,
-               firstname,
-               lastname,
-               email,
-               phonenumber,
-               isactive,
-               createdat,
-               updatedat
+        SELECT *
         FROM users
         WHERE userid = @Id";
 
@@ -198,37 +190,34 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
     }
     public async Task<User?> GetUserByEmail(string email)
     {
-        using var connection = new NpgsqlConnection(_connectionString);
-
-        await connection.OpenAsync();
-
-        string sql = """
-    SELECT
-        UserId,
-        Email,
-        PasswordHash,
-        CreatedAt
-    FROM "users"
-    WHERE Email = @Email
-    """;
-
-        using var command = new NpgsqlCommand(sql, connection);
-
-        command.Parameters.AddWithValue("@Email", email);
-
-        using var reader = await command.ExecuteReaderAsync();
-
-        if (!await reader.ReadAsync())
+        const string sql = @"
+        SELECT *
+        FROM users
+        WHERE email = @email";
+        using var conn = CreateConnection();
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        var p = cmd.CreateParameter();
+        p.ParameterName = "@email";
+        p.Value = (email ?? string.Empty).Trim();
+        cmd.Parameters.Add(p);
+        using var rdr = await cmd.ExecuteReaderAsync();
+        if (await rdr.ReadAsync())
         {
-            return null;
+            return new User
+            {
+                UserId = rdr["UserId"] is Guid uid ? uid : Guid.Empty,
+                FirstName = rdr["FirstName"] as string ?? string.Empty,
+                passwordHash = rdr["PasswordHash"] as string ?? string.Empty,
+                LastName = rdr["LastName"] as string ?? string.Empty,
+                Email = rdr["Email"] as string ?? string.Empty,
+                phoneNumber = rdr["PhoneNumber"] as string ?? string.Empty,
+                isActive = rdr["IsActive"] is bool b && b,
+                createDate = rdr["Createdat"] is DateTime cd ? cd : DateTime.MinValue,
+                updateDate = rdr["UpdateDat"] is DateTime ud ? ud : DateTime.MinValue
+            };
         }
-
-        return new User
-        {
-            UserId = reader.GetGuid(reader.GetOrdinal("userid")),
-            Email = reader.GetString(reader.GetOrdinal("email")),
-            passwordHash = reader.GetString(reader.GetOrdinal("passwordhash")),
-            createDate = reader.GetDateTime(reader.GetOrdinal("createdat"))
-        };
+        return null;
     }
 }
