@@ -16,7 +16,7 @@ namespace EcomProj.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(CreateUserDTO dto)
+        public async Task<IActionResult> Register([FromBody] CreateUserDTO dto)
         {
             Guid userId = await _authService.RegisterAsync(dto);
 
@@ -28,7 +28,7 @@ namespace EcomProj.Controllers
             return Ok(userId);
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDTO dto)
+        public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             bool isAuthenticated = await _authService.Login(dto);
 

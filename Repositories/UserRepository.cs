@@ -8,11 +8,12 @@ namespace ECommerce.API.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly string _connectionString;
-
-    public UserRepository()
+    private readonly ILogger<UserRepository> _logger;
+    public UserRepository(ILogger<UserRepository> logger)
     {
         _connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
             ?? throw new InvalidOperationException("DATABASE_CONNECTION_STRING not found.");
+        _logger = logger;
     }
 
     private NpgsqlConnection CreateConnection()
@@ -112,9 +113,9 @@ public class UserRepository : IUserRepository
 
     public async Task<Guid> CreateAsync(User user)
     {
-        var newId = Guid.NewGuid();
-        const string sql = @"INSERT INTO ""users"" (userid, FirstName, LastName, Email, passwordHash, PhoneNumber, IsActive, Createdat, UpdateDat)
-VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsActive, @Createdat, @UpdateDat)";
+        Guid newId = Guid.Empty;
+        const string sql = @"INSERT INTO ""users"" (FirstName, LastName, Email, passwordHash, PhoneNumber, IsActive, Createdat, UpdateDat)
+VALUES ( @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsActive, @Createdat, @UpdateDat)";
 
         using var conn = CreateConnection();
         await conn.OpenAsync();
@@ -129,7 +130,7 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
             cmd.Parameters.Add(pp);
         }
 
-        AddParam("@UserId", newId);
+
         AddParam("@FirstName", user.FirstName);
         AddParam("@LastName", user.LastName);
         AddParam("@Email", user.Email);
@@ -140,6 +141,8 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
         AddParam("@UpdateDat", DateTime.Now);
 
         var affected = await cmd.ExecuteNonQueryAsync();
+        User newUser = await this.GetUserByEmail(user.Email);
+        newId = newUser.UserId;
         return affected > 0 ? newId : Guid.Empty;
     }
 
@@ -191,33 +194,51 @@ VALUES ( @UserId, @FirstName, @LastName, @Email, @Password, @PhoneNumber, @IsAct
     public async Task<User?> GetUserByEmail(string email)
     {
         const string sql = @"
-        SELECT *
-        FROM users
-        WHERE email = @email";
+        SELECT
+            userid,
+            firstname,
+            lastname,
+            email,
+            passwordhash,
+            phonenumber,
+            isactive,
+            createdat,
+            updatedat
+        FROM ""users""
+        WHERE email = @Email";
+
         using var conn = CreateConnection();
         await conn.OpenAsync();
+
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
+
         var p = cmd.CreateParameter();
-        p.ParameterName = "@email";
+        p.ParameterName = "@Email";
         p.Value = (email ?? string.Empty).Trim();
         cmd.Parameters.Add(p);
+
         using var rdr = await cmd.ExecuteReaderAsync();
+
         if (await rdr.ReadAsync())
         {
-            return new User
+            var user = new User
             {
-                UserId = rdr["UserId"] is Guid uid ? uid : Guid.Empty,
-                FirstName = rdr["FirstName"] as string ?? string.Empty,
-                passwordHash = rdr["PasswordHash"] as string ?? string.Empty,
-                LastName = rdr["LastName"] as string ?? string.Empty,
-                Email = rdr["Email"] as string ?? string.Empty,
-                phoneNumber = rdr["PhoneNumber"] as string ?? string.Empty,
-                isActive = rdr["IsActive"] is bool b && b,
-                createDate = rdr["Createdat"] is DateTime cd ? cd : DateTime.MinValue,
-                updateDate = rdr["UpdateDat"] is DateTime ud ? ud : DateTime.MinValue
+                UserId = rdr["userid"] is Guid uid ? uid : Guid.Empty,
+                FirstName = rdr["firstname"] as string ?? string.Empty,
+                LastName = rdr["lastname"] as string ?? string.Empty,
+                Email = rdr["email"] as string ?? string.Empty,
+                passwordHash = rdr["passwordhash"] as string ?? string.Empty,
+                phoneNumber = rdr["phonenumber"] as string ?? string.Empty,
+                isActive = rdr["isactive"] is bool b && b,
+                createDate = rdr["createdat"] is DateTime cd ? cd : DateTime.MinValue,
+                updateDate = rdr["updatedat"] is DateTime ud ? ud : DateTime.MinValue
             };
+
+
+            return user;
         }
+
         return null;
     }
 }
