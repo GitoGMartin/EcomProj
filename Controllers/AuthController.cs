@@ -30,14 +30,14 @@ namespace EcomProj.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
-            bool isAuthenticated = await _authService.Login(dto);
+            var authResponse = await _authService.Login(dto);
 
-            if (!isAuthenticated)
+            if (authResponse == null)
             {
                 return Unauthorized("Invalid email or password.");
             }
 
-            return Ok("Login successful.");
+            return Ok(authResponse);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace EcomProj.Interfaces
     {
         Task<Guid> RegisterAsync(CreateUserDTO user);
 
-        Task<bool> Login(LoginDTO dto);
+        Task<AuthResponseDTO?> Login(LoginDTO dto);
 
 
 

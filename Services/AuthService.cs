@@ -3,43 +3,36 @@ using ECommerce.API.Models;
 using EcomProj.DTOs;
 using EcomProj.Interfaces;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ECommerce.API.Services;
 
 public class AuthService : IAuthService
 {
+
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly ILogger<AuthService> _logger;
+    private readonly IJwtService _jwtService;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
     public AuthService(
         IUserRepository userRepository,
         IPasswordHasher<User> passwordHasher,
-        ILogger<AuthService> logger)
+        IJwtService jwtService, IRefreshTokenRepository refreshTokenRepository)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
-        _logger = logger;
+        _jwtService = jwtService;
+        _refreshTokenRepository = refreshTokenRepository;
     }
-    private static string GetPasswordFingerprint(string password)
-    {
-        byte[] bytes = Encoding.UTF8.GetBytes(password);
-        byte[] hash = SHA256.HashData(bytes);
 
-        return Convert.ToHexString(hash);
-    }
+
     public async Task<Guid> RegisterAsync(CreateUserDTO dto)
     {
         User? existingUser = await _userRepository.GetUserByEmail(dto.Email);
 
         if (existingUser != null)
         {
-            _logger.LogWarning(
-                "Registration failed: user already exists for email {Email}",
-                dto.Email
-            );
+
 
             return Guid.Empty;
         }
@@ -71,10 +64,7 @@ public class AuthService : IAuthService
 
         if (userId == Guid.Empty)
         {
-            _logger.LogError(
-                "Failed to create user in database for {Email}",
-                dto.Email
-            );
+
 
             return Guid.Empty;
         }
@@ -83,7 +73,7 @@ public class AuthService : IAuthService
         return userId;
     }
 
-    public async Task<bool> Login(LoginDTO dto)
+    public async Task<AuthResponseDTO?> Login(LoginDTO dto)
     {
         string email = dto.Email ?? string.Empty;
 
@@ -92,11 +82,9 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            _logger.LogWarning(
-                "USER NOT FOUND"
-            );
 
-            return false;
+
+            return null;
         }
 
 
@@ -109,14 +97,79 @@ public class AuthService : IAuthService
 
 
 
-        if (databaseHashResult == PasswordVerificationResult.Success)
+        if (databaseHashResult != PasswordVerificationResult.Success)
         {
-            _logger.LogWarning("LOGIN SUCCESS");
-            return true;
+
+
+            return null;
+        }
+        UserDTO dtoUser = new UserDTO
+        {
+            id = user.UserId,
+            firstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            PhoneNumber = user.phoneNumber,
+            IsActive = user.isActive,
+            CreateDate = user.createDate,
+            UpdateDate = user.updateDate
+        };
+
+        var accessToken = _jwtService.GenerateAccessToken(dtoUser);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        var refreshTokenEntity = new RefreshToken
+        {
+            userId = user.UserId,
+            token = refreshToken,
+            createDate = DateTime.UtcNow,
+            expiresOn = DateTime.UtcNow.AddDays(7)
+        };
+
+        await _refreshTokenRepository.Create(refreshTokenEntity);
+
+        return new AuthResponseDTO
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresIn = 900
+        };
+
+
+    }
+    public async Task<AuthResponseDTO?> RefreshToken(string refreshToken)
+    {
+        var storedToken = await _refreshTokenRepository.GetByToken(refreshToken);
+
+        if (storedToken == null)
+        {
+            return null;
         }
 
-        _logger.LogWarning("LOGIN FAILED");
+        if (storedToken.revoked != null)
+        {
+            return null;
+        }
 
-        return false;
+        if (storedToken.expiresOn <= DateTime.UtcNow)
+        {
+            return null;
+        }
+
+
+        UserDTO? user = await _userRepository.GetByIdAsync(storedToken.userId);
+
+        if (user == null)
+        {
+            return null;
+        }
+        var accessToken = _jwtService.GenerateAccessToken(user);
+
+        return new AuthResponseDTO
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresIn = 900
+        };
     }
 }
