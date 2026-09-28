@@ -156,19 +156,39 @@ public class AuthService : IAuthService
             return null;
         }
 
-
-        UserDTO? user = await _userRepository.GetByIdAsync(storedToken.userId);
+        var user = await _userRepository.GetByIdAsync(storedToken.userId);
 
         if (user == null)
         {
             return null;
         }
+
+        // Revoke the old refresh token
+        await _refreshTokenRepository.Revoke(
+            storedToken.RefreshTokenId
+        );
+
+        // Generate new tokens
         var accessToken = _jwtService.GenerateAccessToken(user);
+        var newRefreshToken = _jwtService.GenerateRefreshToken();
+
+        // Save the new refresh token
+        var newRefreshTokenEntity = new RefreshToken
+        {
+            userId = user.id,
+            token = newRefreshToken,
+            createDate = DateTime.UtcNow,
+            expiresOn = DateTime.UtcNow.AddDays(7),
+
+            revoked = null
+        };
+
+        await _refreshTokenRepository.Create(newRefreshTokenEntity);
 
         return new AuthResponseDTO
         {
             AccessToken = accessToken,
-            RefreshToken = refreshToken,
+            RefreshToken = newRefreshToken,
             ExpiresIn = 900
         };
     }

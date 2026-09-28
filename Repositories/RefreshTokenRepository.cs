@@ -98,16 +98,20 @@ namespace EcomProj.Repositories
         public async Task Revoke(int refreshTokenId)
         {
             await using var connection = CreateConnection();
-
             await connection.OpenAsync();
 
             const string sql = """
-                UPDATE "RefreshTokens"
-                SET "RevokedAt" = CURRENT_TIMESTAMP
-                WHERE "RefreshTokenId" = @RefreshTokenId;
-                """;
+        UPDATE "RefreshTokens"
+        SET "RevokedAt" = @RevokedAt
+        WHERE "RefreshTokenId" = @RefreshTokenId;
+        """;
 
             await using var command = new NpgsqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue(
+                "@RevokedAt",
+                DateTime.UtcNow
+            );
 
             command.Parameters.AddWithValue(
                 "@RefreshTokenId",

@@ -7,7 +7,7 @@ namespace EcomProj.Interfaces
         Task<Guid> RegisterAsync(CreateUserDTO user);
 
         Task<AuthResponseDTO?> Login(LoginDTO dto);
-
+        Task<AuthResponseDTO?> RefreshToken(string refreshToken);
 
 
     }

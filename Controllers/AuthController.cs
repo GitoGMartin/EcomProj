@@ -39,5 +39,23 @@ namespace EcomProj.Controllers
 
             return Ok(authResponse);
         }
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken(
+            RefreshTokenDTO refreshTokenDTO)
+        {
+            var result = await _authService.RefreshToken(
+                refreshTokenDTO.RefreshToken
+            );
+
+            if (result == null)
+            {
+                return Unauthorized(new
+                {
+                    message = "Invalid or expired refresh token."
+                });
+            }
+
+            return Ok(result);
+        }
     }
 }

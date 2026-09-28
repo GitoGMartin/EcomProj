@@ -1,5 +1,6 @@
 using ECommerce.API.Interfaces;
 using EcomProj.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EcomProj.Controllers
@@ -17,6 +18,7 @@ namespace EcomProj.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetAll()
         {
             var users = await _userRepository.GetAllAsync();
